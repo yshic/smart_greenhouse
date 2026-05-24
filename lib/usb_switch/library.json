@@ -1,0 +1,15 @@
+{
+  "name": "Duo USB Switch Module Library",
+  "keywords": "USB, control, switch, PMW",
+  "description": "A library for interfacing with USB Switch Module",
+  "authors": [
+    {
+      "name": "Tuan Nguyen",
+      "email": "tuanl799@gmail.com"
+    }
+  ],
+  "license": "MIT",
+  "version": "0.1.0",
+  "frameworks": "arduino",
+  "platforms": "*"
+}

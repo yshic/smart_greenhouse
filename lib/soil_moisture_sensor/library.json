@@ -1,0 +1,14 @@
+{
+  "name": "Soil Moisture Sensor Library",
+  "keywords": "soil, moisture, sensor",
+  "description": "A library for interfacing with soil moisture sensors.",
+  "authors": [
+    {
+      "name": "Tuan Nguyen",
+      "email": "tuanl799@gmail.com"
+    }
+  ],
+  "version": "0.1.0",
+  "frameworks": "arduino",
+  "platforms": "*"
+}
