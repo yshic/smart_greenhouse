@@ -60,8 +60,8 @@ The firmware is divided into highly decoupled, specialized FreeRTOS tasks:
 * `wifi_task`: Event-driven state machine managing connection and Modem Sleep (replaces standard polling loops).
 * `vSensorsTask`: Periodically polls the DHT20, Soil, and Light sensors, executes the local rule engine, and pushes data/commands to queues.
 * `vActuatorTask`: A stateless executor that blindly applies hardware states received from the actuator queue.
-* `vSendTelemetryTask`: Syncs queued sensor data and actuator confirmations to the ThingsBoard server via MQTT, protected by Mutexes to prevent network timeouts.
-* `vLcdTask`: Manages the local UI state machine. Implements a placeholder initialization pattern and an interaction timeout to disable the I2C backlight and save power.
+* `vSendTelemetryTask`: Syncs queued sensor data and actuator confirmations to the CoreIOT server via MQTT, protected by Mutexes to prevent network timeouts.
+* `vLcdTask`: Manages the local UI state machine. Implements an interaction timeout to disable the I2C backlight and save power.
 * `vButtonTask`: Handles hardware interrupts for single/double clicks to navigate local menus.
 
 ---
