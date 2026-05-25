@@ -52,9 +52,14 @@ void vSensorsTask(void *pvParameters)
   SensorData_t     currentReadings;
   DisplayMessage_t displayMessage;
 
+  bool isFanOn  = false;
+  bool isLedOn  = false;
+  bool isPumpOn = false;
+
   for (;;)
   {
     memset(&currentReadings, 0, sizeof(SensorData_t));
+    memset(&displayMessage, 0, sizeof(DisplayMessage_t));
 
 #ifdef DHT20_MODULE
     dht20.readTempAndHumidity();
@@ -83,6 +88,61 @@ void vSensorsTask(void *pvParameters)
     {
       xQueueSend(xDisplayQueue, &displayMessage, pdMS_TO_TICKS(10));
     }
+
+    if (xAutoConfigMutex != NULL && xSemaphoreTake(xAutoConfigMutex, pdMS_TO_TICKS(50)) == pdTRUE)
+    {
+      if (autoControlConfig.autoFanFlag == true)
+      {
+        bool needsFan = (currentReadings.temperature >= autoControlConfig.temp_threshold);
+        if (needsFan && !isFanOn)
+        {
+          ActuatorCommand_t cmd = {DEVICE_FAN, 80};
+          xQueueSend(xActuatorQueue, &cmd, pdMS_TO_TICKS(0));
+          isFanOn = true;
+        }
+        else if (!needsFan && isFanOn)
+        {
+          ActuatorCommand_t cmd = {DEVICE_FAN, 0};
+          xQueueSend(xActuatorQueue, &cmd, pdMS_TO_TICKS(0));
+          isFanOn = false;
+        }
+      }
+
+      if (autoControlConfig.autoLedFlag == true)
+      {
+        bool needsLed = (currentReadings.lux <= autoControlConfig.light_threshold);
+        if (needsLed && !isLedOn)
+        {
+          ActuatorCommand_t cmd = {DEVICE_LED, 1};
+          xQueueSend(xActuatorQueue, &cmd, pdMS_TO_TICKS(0));
+          isLedOn = true;
+        }
+        else if (!needsLed && isLedOn)
+        {
+          ActuatorCommand_t cmd = {DEVICE_LED, 0};
+          xQueueSend(xActuatorQueue, &cmd, pdMS_TO_TICKS(0));
+          isLedOn = false;
+        }
+      }
+
+      if (autoControlConfig.autoPumpFlag == true)
+      {
+        bool needsPump = (currentReadings.soil_moisture <= autoControlConfig.moisture_threshold);
+        if (needsPump && !isPumpOn)
+        {
+          ActuatorCommand_t cmd = {DEVICE_PUMP, 1};
+          xQueueSend(xActuatorQueue, &cmd, pdMS_TO_TICKS(0));
+          isPumpOn = true;
+        }
+        else if (!needsPump && isPumpOn)
+        {
+          ActuatorCommand_t cmd = {DEVICE_PUMP, 0};
+          xQueueSend(xActuatorQueue, &cmd, pdMS_TO_TICKS(0));
+          isPumpOn = false;
+        }
+      }
+      xSemaphoreGive(xAutoConfigMutex);
+    } // End if Semaphore check and take
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }

@@ -61,9 +61,9 @@ constexpr uint16_t COREIOT_PORT     = 1883U;
 // if the size is to small messages might not be sent or received messages will be discarded
 constexpr uint16_t MAX_MESSAGE_SEND_SIZE    = 512U;
 constexpr uint16_t MAX_MESSAGE_RECEIVE_SIZE = 512U;
-constexpr size_t   MAX_ATTRIBUTES           = 10U;
+constexpr size_t   MAX_ATTRIBUTES           = 15U;
 
-constexpr uint8_t SHARED_ATTRIBUTES_ARRAY_SIZE = 5U;
+constexpr uint8_t SHARED_ATTRIBUTES_ARRAY_SIZE = 11U;
 constexpr uint8_t CLIENT_ATTRIBUTES_ARRAY_SIZE = 3U;
 constexpr uint8_t RPC_CALLBACK_ARRAY_SIZE      = 1U;
 
@@ -100,9 +100,25 @@ constexpr char CLIENT_LED_STATE_ATTR[]  = "clientLedState";
 constexpr char CLIENT_FAN_SPEED_ATTR[]  = "clientFanSpeed";
 constexpr char CLIENT_PUMP_STATE_ATTR[] = "clientPumpState";
 
+constexpr char CLIENT_AUTO_FAN_FLAG[]  = "clientAutoFanFlag";
+constexpr char CLIENT_AUTO_LED_FLAG[]  = "clientAutoLedFlag";
+constexpr char CLIENT_AUTO_PUMP_FLAG[] = "clientAutoPumpFlag";
+
+constexpr char CLIENT_AUTO_FAN_TEMP_THRESHOLD[]      = "clientAutoFanThreshold";
+constexpr char CLIENT_AUTO_LED_LIGHT_THRESHOLD[]     = "clientAutoLedThreshold";
+constexpr char CLIENT_AUTO_PUMP_MOISTURE_THRESHOLD[] = "clientAutoPumpThreshold";
+
 constexpr char SHARED_LED_STATE_ATTR[]  = "sharedLedState";
 constexpr char SHARED_FAN_SPEED_ATTR[]  = "sharedFanSpeed";
 constexpr char SHARED_PUMP_STATE_ATTR[] = "sharedPumpState";
+
+constexpr char SHARED_AUTO_FAN_FLAG[]  = "sharedAutoFanFlag";
+constexpr char SHARED_AUTO_LED_FLAG[]  = "sharedAutoLedFlag";
+constexpr char SHARED_AUTO_PUMP_FLAG[] = "sharedAutoPumpFlag";
+
+constexpr char SHARED_AUTO_FAN_TEMP_THRESHOLD[]      = "sharedAutoFanThreshold";
+constexpr char SHARED_AUTO_LED_LIGHT_THRESHOLD[]     = "sharedAutoLedThreshold";
+constexpr char SHARED_AUTO_PUMP_MOISTURE_THRESHOLD[] = "sharedAutoPumpThreshold";
 
 constexpr char FW_TITLE_ATTR[]   = "fw_title";
 constexpr char FW_VERSION_ATTR[] = "fw_version";
@@ -120,7 +136,17 @@ const std::array<IAPI_Implementation *, 4U> apis = {&ota, &rpc, &attr_request, &
 
 // List of shared attributes for subscribing to their updates
 constexpr std::array<const char *, SHARED_ATTRIBUTES_ARRAY_SIZE> SHARED_ATTRIBUTES_LIST = {
-SHARED_LED_STATE_ATTR, SHARED_PUMP_STATE_ATTR, SHARED_FAN_SPEED_ATTR, FW_TITLE_ATTR, FW_VERSION_ATTR};
+SHARED_LED_STATE_ATTR,
+SHARED_PUMP_STATE_ATTR,
+SHARED_FAN_SPEED_ATTR,
+SHARED_AUTO_FAN_FLAG,
+SHARED_AUTO_LED_FLAG,
+SHARED_AUTO_PUMP_FLAG,
+SHARED_AUTO_FAN_TEMP_THRESHOLD,
+SHARED_AUTO_LED_LIGHT_THRESHOLD,
+SHARED_AUTO_PUMP_MOISTURE_THRESHOLD,
+FW_TITLE_ATTR,
+FW_VERSION_ATTR};
 
 WiFiClient          wifiClient;
 Arduino_MQTT_Client mqttClient(wifiClient);
@@ -173,6 +199,7 @@ void progress_callback(const size_t &current, const size_t &total)
 }
 #endif // OTA_UPDATE_MODULE
 
+/* Shared Atrribute Callback --------------------------------------------------- */
 /// @brief Shared attribute update callback
 /// @param data New value of shared attributes which is changed
 void processSharedAttributes(const JsonObjectConst &data)
@@ -206,6 +233,8 @@ void processSharedAttributes(const JsonObjectConst &data)
       ActuatorCommand_t sendCommand;
       sendCommand.targetDevice = DEVICE_LED;
       sendCommand.value        = ledState ? 1 : 0;
+
+      // Send command to Actuator Task
       if (xActuatorQueue != NULL)
       {
         xQueueSend(xActuatorQueue, &sendCommand, pdMS_TO_TICKS(10));
@@ -226,6 +255,7 @@ void processSharedAttributes(const JsonObjectConst &data)
       Serial.println(pumpState);
 #endif // DEBUG_PRINT
 
+      // Send command to Actuator Task
       if (xActuatorQueue != NULL)
       {
         xQueueSend(xActuatorQueue, &sendCommand, pdMS_TO_TICKS(10));
@@ -245,13 +275,70 @@ void processSharedAttributes(const JsonObjectConst &data)
       Serial.printf("Fan speed is set to: %d\n", fanSpeed);
 #endif // DEBUG_PRINT
 
+      // Send command to Actuator Task
       if (xActuatorQueue != NULL)
       {
         xQueueSend(xActuatorQueue, &sendCommand, pdMS_TO_TICKS(10));
       }
     }
+
+    // AUTO MODE
+
+    // AUTO MODE FLAG
+    else if (strcmp(key, SHARED_AUTO_FAN_FLAG) == 0)
+    {
+      if (xSemaphoreTake(xAutoConfigMutex, pdMS_TO_TICKS(50)) == pdTRUE)
+      {
+        autoControlConfig.autoFanFlag = it->value().as<bool>();
+        xSemaphoreGive(xAutoConfigMutex);
+      }
+    }
+
+    else if (strcmp(key, SHARED_AUTO_LED_FLAG) == 0)
+    {
+      if (xSemaphoreTake(xAutoConfigMutex, pdMS_TO_TICKS(50)) == pdTRUE)
+      {
+        autoControlConfig.autoLedFlag = it->value().as<bool>();
+        xSemaphoreGive(xAutoConfigMutex);
+      }
+    }
+    else if (strcmp(key, SHARED_AUTO_PUMP_FLAG) == 0)
+    {
+      if (xSemaphoreTake(xAutoConfigMutex, pdMS_TO_TICKS(50)) == pdTRUE)
+      {
+        autoControlConfig.autoPumpFlag = it->value().as<bool>();
+        xSemaphoreGive(xAutoConfigMutex);
+      }
+    }
+
+    // AUTO MODE THRESHOLD
+    else if (strcmp(key, SHARED_AUTO_FAN_TEMP_THRESHOLD) == 0)
+    {
+      if (xSemaphoreTake(xAutoConfigMutex, pdMS_TO_TICKS(50)) == pdTRUE)
+      {
+        autoControlConfig.temp_threshold = it->value().as<float>();
+        xSemaphoreGive(xAutoConfigMutex);
+      }
+    }
+    else if (strcmp(key, SHARED_AUTO_LED_LIGHT_THRESHOLD) == 0)
+    {
+      if (xSemaphoreTake(xAutoConfigMutex, pdMS_TO_TICKS(50)) == pdTRUE)
+      {
+        autoControlConfig.light_threshold = it->value().as<uint8_t>();
+        xSemaphoreGive(xAutoConfigMutex);
+      }
+    }
+    else if (strcmp(key, SHARED_AUTO_PUMP_MOISTURE_THRESHOLD) == 0)
+    {
+      if (xSemaphoreTake(xAutoConfigMutex, pdMS_TO_TICKS(50)) == pdTRUE)
+      {
+        autoControlConfig.moisture_threshold = it->value().as<uint8_t>();
+        xSemaphoreGive(xAutoConfigMutex);
+      }
+    }
   }
 }
+/* End of Shared Atrribute Callback ------------------------------------------------ */
 
 // Attribute request did not receive a response in the expected amount of microseconds
 void requestTimedOut()
@@ -301,7 +388,7 @@ void iotServerTask(void *pvParameters)
         continue;
       }
 
-      // 2. Setup (Only runs ONCE immediately after a successful connect)
+      // Setup (Only runs ONCE immediately after a successful connect)
       if (needsSetup)
       {
 #ifdef DEBUG_PRINT
@@ -361,6 +448,9 @@ void sendTelemetryTask(void *pvParameters)
   SensorData_t      receivedReadings;
   ActuatorCommand_t deviceStatus;
 
+  // Create a copy of autoControlConfig to send to ThingsBoard
+  AutoControlConfig_t autoConfigCopy;
+
   // Queue large enough to hold both queue
   QueueSetHandle_t xNetworkQueueSet = xQueueCreateSet(15);
 
@@ -376,6 +466,7 @@ void sendTelemetryTask(void *pvParameters)
     QueueSetMemberHandle_t xActivatedQueue = xQueueSelectFromSet(xNetworkQueueSet, portMAX_DELAY);
     bool                   hasSensorData   = false;
     bool                   hasDeviceData   = false;
+    bool                   autoConfigCopiedSuccessfully = false;
 
     if (xActivatedQueue == xSensorQueue)
     {
@@ -386,6 +477,14 @@ void sendTelemetryTask(void *pvParameters)
     {
       xQueueReceive(xDeviceStatusQueue, &deviceStatus, 0);
       hasDeviceData = true;
+    }
+
+    // Take the mutex and copy the config
+    if (xAutoConfigMutex != NULL && xSemaphoreTake(xAutoConfigMutex, pdMS_TO_TICKS(50)) == pdTRUE)
+    {
+      autoConfigCopy = autoControlConfig;
+      xSemaphoreGive(xAutoConfigMutex);
+      autoConfigCopiedSuccessfully = true;
     }
 
     if (WiFi.status() == WL_CONNECTED)
@@ -452,6 +551,17 @@ void sendTelemetryTask(void *pvParameters)
                 break;
             }
           } // End if hasDeviceData
+
+          // Send attributes of autoControlConfig to Cloud
+          if (autoConfigCopiedSuccessfully)
+          {
+            tb.sendAttributeData(CLIENT_AUTO_FAN_FLAG, autoConfigCopy.autoFanFlag);
+            tb.sendAttributeData(CLIENT_AUTO_LED_FLAG, autoConfigCopy.autoLedFlag);
+            tb.sendAttributeData(CLIENT_AUTO_PUMP_FLAG, autoConfigCopy.autoPumpFlag);
+            tb.sendAttributeData(CLIENT_AUTO_FAN_TEMP_THRESHOLD, autoConfigCopy.temp_threshold);
+            tb.sendAttributeData(CLIENT_AUTO_LED_LIGHT_THRESHOLD, autoConfigCopy.light_threshold);
+            tb.sendAttributeData(CLIENT_AUTO_PUMP_MOISTURE_THRESHOLD, autoConfigCopy.moisture_threshold);
+          }
 
           tb.sendAttributeData("rssi", WiFi.RSSI()); // Send WiFi signal strength
 

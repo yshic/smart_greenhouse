@@ -12,7 +12,16 @@
 #ifndef GLOBALS_H
   #define GLOBALS_H
 
-/* Private defines ---------------------------------------------------- */
+/* Includes ----------------------------------------------------------- */
+
+  #if ARDUINO >= 100
+    #include "Arduino.h"
+  #else
+    #include "WProgram.h"
+  #endif
+
+/* Public defines ---------------------------------------------------- */
+
 // DEBUGGING
 // #define DEBUG_I2C
 
@@ -24,9 +33,8 @@
 //  #define YOLO_UNO
   #define XIAO_ESP32S3
 
-//  #define DEBUG_PRINT_RTOS_TIMING
 // Communication
-/* Wireless   --------------------------------------------------------- */
+// Wireless
   #ifdef ESP32
     #define WIFI_MODULE
     #define IOT_SERVER_MODULE
@@ -76,12 +84,27 @@
     #define LIGHT_SENSOR_PIN  A9
   #endif
 
-/* Includes ----------------------------------------------------------- */
+/* Public enumerate/structure ----------------------------------------- */
 
-  // RTOS
-  #include "../src/tasks/wifi_task.h"
+typedef struct
+{
+  float   temp_threshold;
+  uint8_t light_threshold;
+  uint8_t moisture_threshold;
+  bool    autoFanFlag;
+  bool    autoLedFlag;
+  bool    autoPumpFlag;
+} AutoControlConfig_t;
+
+/* Public macros ------------------------------------------------------ */
+
+/* Public variables --------------------------------------------------- */
 
 extern bool wifiConnected;
+
+extern AutoControlConfig_t autoControlConfig;
+
+extern SemaphoreHandle_t xAutoConfigMutex;
 
 #endif // GLOBALS_H
 
