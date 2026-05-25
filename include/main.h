@@ -29,6 +29,7 @@
   #include "../src/tasks/iot_server_task.h"
   #include "../src/tasks/lcd_task.h"
   #include "../src/tasks/sensors_task.h"
+  #include "../src/tasks/wifi_task.h"
 
   /* Public defines ----------------------------------------------------- */
   #define MAIN_LIB_VERSION (F("0.1.0"))

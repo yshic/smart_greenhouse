@@ -28,7 +28,9 @@ QueueHandle_t xButtonQueue;
 
 /* Private variables -------------------------------------------------- */
 
+  #ifdef BUTTON_MODULE
 static ButtonHandler button(BUTTON_PIN, false, true);
+  #endif
 
 /* Task definitions ------------------------------------------- */
 void vButtonTask(void *pvParameters)
