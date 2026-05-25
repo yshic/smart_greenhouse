@@ -9,6 +9,8 @@ A FreeRTOS-based embedded IoT controller for automated greenhouse monitoring and
 
 This project focuses heavily on **thread-safe concurrency**, **memory management**, and **advanced power efficiency**.
 
+---
+
 ## Key Features
 
 * **Real-Time OS Architecture:** Utilizes FreeRTOS Queue Sets and Mutexes to seamlessly manage concurrent sensor polling, I2C display updates, and MQTT cloud syncing without data loss or race conditions.
@@ -19,6 +21,21 @@ This project focuses heavily on **thread-safe concurrency**, **memory management
     * **Peripheral Timeouts:** Custom software timers to disable the I2C LCD backlight after user inactivity.
     * **Hardware Interrupts:** Uses `gpio_wakeup_enable` to keep the CPU asleep until a physical button is pressed.
 * **Cloud Integration:** Connects to the CoreIOT/ThingsBoard platform via MQTT for real-time telemetry visualization and remote RPC control of actuators.
+
+---
+
+## Remote Monitoring and Controlling Through IoT Dashboard
+
+### Main Dashboard
+![IoT Dashboard Screenshot](img/dashboard/smart_greenhouse_main.jpg)
+
+### Greenhouse 1 Dashboard
+![IoT Dashboard Screenshot](img/dashboard/greenhouse_1.jpg)
+
+### Greenhouse 1 Smart Control Dashboard
+![IoT Dashboard Screenshot](img/dashboard/greenhouse_1_smart_control.jpg)
+
+---
 
 ## Hardware Requirements
 
@@ -34,6 +51,8 @@ This project focuses heavily on **thread-safe concurrency**, **memory management
     * 16x2 I2C LCD Display
     * Push Button (for manual screen wake/toggles)
 
+---
+
 ## Software Architecture
 
 The firmware is divided into highly decoupled, specialized FreeRTOS tasks:
@@ -44,6 +63,8 @@ The firmware is divided into highly decoupled, specialized FreeRTOS tasks:
 * `vSendTelemetryTask`: Syncs queued sensor data and actuator confirmations to the ThingsBoard server via MQTT, protected by Mutexes to prevent network timeouts.
 * `vLcdTask`: Manages the local UI state machine. Implements a placeholder initialization pattern and an interaction timeout to disable the I2C backlight and save power.
 * `vButtonTask`: Handles hardware interrupts for single/double clicks to navigate local menus.
+
+---
 
 ## Setup & Installation
 
@@ -61,12 +82,13 @@ The firmware is divided into highly decoupled, specialized FreeRTOS tasks:
 
     #define DEFAULT_SSID_HOME "Your_WiFi_SSID"
     #define DEFAULT_PASSWORD_HOME "Your_WiFi_Password"
-    #define THINGSBOARD_TOKEN "Your_Device_Token"
+    #define COREIOT_TOKEN "Your_Device_Token"
 
     #endif
     ```
 4.  **Build and Upload:**
     Compile the code and flash it to the XIAO ESP32-S3.
+---
 
 ## License
 This project is licensed under the MIT License.
